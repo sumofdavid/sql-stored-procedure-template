@@ -33,7 +33,8 @@ GO
 CREATE PROCEDURE [<schema_name, sysname, dbo>].[<proc_name, sysname, s_ProcName>]
 (
 	<@param1, sysname, @p1> <datatype_for_param1,,> = <default_value_for_param1, , >, 
-	<@param2, sysname, @p2> <datatype_for_param2,,> = <default_value_for_param2, , >
+	<@param2, sysname, @p2> <datatype_for_param2,,> = <default_value_for_param2, , >,
+    @debug bit = 0;
 )
 -- WITH EXECUTE AS OWNER
 AS
@@ -60,15 +61,18 @@ SET XACT_ABORT ON
 	SET @err_sec = 'log parameters';		
 
 	-- uncomment if you want to log the individual parameters
-	--SELECT @params =	N'<@param1, sysname, @p1> = ' + ISNULL('''' + CAST(<@param1, sysname, @p1> AS nvarchar(xxx)) + '''',N'NULL') + N' , ' +
-	--					N'<@param2, sysname, @p2> = ' + ISNULL('''' + CAST(<@param2, sysname, @p2> AS nvarchar(xxx)) + '''',N'NULL')
+	--SELECT @params =	N'<@param1, sysname, @p1> = ' + COALESCE('''' + CAST(<@param1, sysname, @p1> AS nvarchar(xxx)) + '''',N'NULL') + N' , ' +
+	--					N'<@param2, sysname, @p2> = ' + COALESCE('''' + CAST(<@param2, sysname, @p2> AS nvarchar(xxx)) + '''',N'NULL') + N' , ' +
 	--					-- Choose which lines to use based on the data type of the parameters.  For character and dates, use above, for numbers use below syntax
-	--					N'<@param1, sysname, @p1> = ' + ISNULL(CAST(<@param1, sysname, @p1> AS nvarchar(xxx)),N'NULL') + N' , ' +
-	--					N'<@param2, sysname, @p2> = ' + ISNULL(CAST(<@param2, sysname, @p2> AS nvarchar(xxx)),N'NULL')
-	
+	--					N'<@param1, sysname, @p1> = ' + COALESCE(CAST(<@param1, sysname, @p1> AS nvarchar(xxx)),N'NULL') + N' , ' +
+	--					N'<@param2, sysname, @p2> = ' + COALESCE(CAST(<@param2, sysname, @p2> AS nvarchar(xxx)),N'NULL') + N' , ' +
+	--                  -- the following is for the @debug parameter
+    --                  N'@debug = ' + COALESCE(CAST(@p2 AS nvarchar(4)),N'NULL')
 
 	-- Validate calling parameters here
 	SET @err_sec = 'validate parameters';
+
+    SET @debug = COALESCE(@debug,0);
 
 	--------------------------------------------------
 	-- parameter validation code here
@@ -97,17 +101,13 @@ SET XACT_ABORT ON
 
 		-- Log a particular section of the proc
 		SET @rows = @@ROWCOUNT;
-		SET @err_sec = 'Log execution of particular section';
-		
 		SET @exec_end = SYSDATETIMEOFFSET();
 		EXEC [DBA].[s_AddProcExecLog] @db_id = @db_id, @object_id = @@PROCID, @start = @sec_exec_start, @end = @exec_end, @extra_info = @params, @rows = @rows, @section = @err_sec, @version = @version;
 		SET @sec_exec_start = SYSDATETIMEOFFSET();
-
-
+        
 		-- Log the entire time execution of the proc
 		SET @rows = @@ROWCOUNT;
 		SET @err_sec = 'Log Stored Procedure Execution';
-
 		SET @exec_end = SYSDATETIMEOFFSET();
 		EXEC [DBA].[s_AddProcExecLog] @db_id = @db_id, @object_id = @@PROCID, @start = @exec_start, @end = @exec_end, @extra_info = @params, @rows = @rows, @section = @err_sec, @version = @version;
 
@@ -159,4 +159,5 @@ GO
 EXEC sys.sp_addextendedproperty N'MS_Description', N'Placeholder', N'SCHEMA', N'<schema_name, sysname, dbo>', N'PROCEDURE', N'<proc_name, sysname, s_ProcName>'
 EXEC sys.sp_addextendedproperty N'MS_Description', N'Placeholder', N'SCHEMA', N'<schema_name, sysname, dbo>', N'PROCEDURE', N'<proc_name, sysname, s_ProcName>', N'PARAMETER', N'<@param1, sysname, @p1>'
 EXEC sys.sp_addextendedproperty N'MS_Description', N'Placeholder', N'SCHEMA', N'<schema_name, sysname, dbo>', N'PROCEDURE', N'<proc_name, sysname, s_ProcName>', N'PARAMETER', N'<@param2, sysname, @p1>'
+EXEC sys.sp_addextendedproperty N'MS_Description', N'Flag to determine if proc executing in debug mode.', N'SCHEMA', N'<schema_name, sysname, dbo>', N'PROCEDURE', N'<proc_name, sysname, s_ProcName>', N'PARAMETER', N'@debug'
 GO
