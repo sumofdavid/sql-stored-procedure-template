@@ -34,7 +34,7 @@ CREATE PROCEDURE [<schema_name, sysname, dbo>].[<proc_name, sysname, s_ProcName>
 (
 	<@param1, sysname, @p1> <datatype_for_param1,,> = <default_value_for_param1, , >, 
 	<@param2, sysname, @p2> <datatype_for_param2,,> = <default_value_for_param2, , >,
-    @debug bit = 0;
+    @debug bit = 0
 )
 -- WITH EXECUTE AS OWNER
 AS
@@ -67,7 +67,7 @@ SET XACT_ABORT ON
 	--					N'<@param1, sysname, @p1> = ' + COALESCE(CAST(<@param1, sysname, @p1> AS nvarchar(xxx)),N'NULL') + N' , ' +
 	--					N'<@param2, sysname, @p2> = ' + COALESCE(CAST(<@param2, sysname, @p2> AS nvarchar(xxx)),N'NULL') + N' , ' +
 	--                  -- the following is for the @debug parameter
-    --                  N'@debug = ' + COALESCE(CAST(@p2 AS nvarchar(4)),N'NULL')
+    --                  N'@debug = ' + COALESCE(CAST(@debug AS nvarchar(4)),N'NULL')
 
 	-- Validate calling parameters here
 	SET @err_sec = 'validate parameters';
